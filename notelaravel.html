@@ -1,0 +1,118 @@
+Pagination
+Bước 1 :
+		$product = DB::table('products')->select('*')->orderBy('id','DESC')->skip(0)->take(4)->paginate(2);
+Bước 2 :
+				  <div class="pagination pull-right">
+                    <ul>
+                        @if ($product_cate->currentPage() != 1)
+                            <li><a href="{!! str_replace('/?', '?', $product_cate->url($product_cate->currentPage() - 1)) !!}">Prev</a>
+                          </li>
+                        @endif
+                        @for ($i = 1; $i < $product_cate->lastPage() ; $i++)
+                            <li class="{!! ($product_cate->currentPage() == $i) ? 'active' : '' !!}">
+                                <a href="{!! str_replace('/?', '?', $product_cate->url($i)) !!}">{!! $i !!}</a>
+                            </li>
+                        @endfor
+                        @if ($product_cate->currentPage()!= $product_cate->lastPage())
+                          <li><a href="{!! str_replace('/?', '?', $product_cate->url($product_cate->currentPage() + 1)) !!}">Next</a></li>
+                       @endif
+                    </ul>
+                  </div>
+---------------------------------------------------------------------------------------------------------------------------------------------
+Send Mail
+Bước 1: Đăng nhập Gmail -> Setting
+Bước 2: Forwarding and POP/IMAP
+			Enable POP for all mail (even mail that's already been downloaded)
+			IMAP is enabled
+
+			Save Changes
+Bước 3: Truy cập https://www.google.com/settings/security/lesssecureapps
+		turn on : chon chế độ truy cập kém bảo mật
+Bước 4: Vào trong project chon file .env || Gmail sử dụng hai port : 587 468
+		MAIL_DRIVER=smtp
+		MAIL_HOST=smtp.gmail.com
+		MAIL_PORT=587
+		MAIL_USERNAME=vuthilien1403@gmail.com
+		MAIL_PASSWORD=01663971299
+Bước 5: file: config->mail.php cấu hình mail
+
+Bước 6: Tạo file banks.blade.php : lưu trữ thông tin gửi đi
+
+Bước 7: Trong controller
+	public function post_lienhe(Request $request)
+	{
+
+		$data = ['hoten'=> Request::input('name'),'tinnhan'=>Request::input('message')];
+		Mail::send('emails.blanks',$data,function($msg){
+			$msg->from('vuthilien1403@gmail.com','Vũ Liên');
+			$msg->to('nguyennam.ktqs@gmail.com','Nguyễn Nam')->subject('Đây là mail Khoa Phạm');
+		});
+		echo "<script >
+              alert('Cám ơn bạn đã góp ý! Chúng tôi sẽ liên hệ lại với bạn trong thời gian sớm nhất');
+              window.location = '".url('/')."'
+        </script>";
+	}
+-----------------------------------------------------------------------------------------------------------------------------------------------
+Request
+use Illuminate\Http\Request;
+public function getpath(Request $request)
+	{
+		echo $request->url();
+	}
+------------------------------------------------------------------------------------------------------------------------------------------------
+Giỏ Hàng
+Bước1: Vào file composer.json
+"require": {
+		"gloudemans/shoppingcart": "~1.3"
+	}
+Bước2: Thêm
+		'Gloudemans\Shoppingcart\ShoppingcartServiceProvider',  và 'Cart'      => 'Gloudemans\Shoppingcart\Facades\Cart',
+		vào trong E:\PHP\xampp\htdocs\www\framework\project_laravel\config\app.php
+Bước3: php composer.phar update
+Bước4:
+	Route::get('mua-hang/{id}/{tensanpham}',['as'=>'muahang','uses'=>'WelcomeController@muahang']);
+	Route::get('gio-hang',['as'=>'giohang','uses'=>'WelcomeController@giohang']);
+	Route::get('xoa-san-pham/{id}',['as'=>'xoasanpham','uses'=>'WelcomeController@xoasanpham']);
+Bước5: Trong Controller
+		use Cart;
+		public function muahang($id)
+			{
+				$product_buy = DB::table('products')->where('id',$id)->first();
+				Cart::add(array('id'=>$id,'name'=>$product_buy->name,'qty'=>1,'price'=>$product_buy->price,'options'=>array('img'=>$product_buy->image)));
+				return redirect()->route('giohang');
+			}
+			public function giohang()
+			{
+				$content = Cart::content();
+				$total = Cart::total();
+				return view('user.pages.shopping',compact('content','total'));
+			}
+			public function xoasanpham($id)
+			{
+				Cart::remove($id);
+				return redirect()->route('giohang');
+			}
+Bước6: Trong View Shopping-Cart
+		 @foreach ($content as $item)
+            <tr>
+                <td class="image"><a href="#"><img title="product" alt="product" src="{!! asset('resources/upload/'.$item['options']['img']) !!}" height="50" width="50"></a></td>
+                <td class="name"><a href="#">{!! $item['name'] !!}</a></td>
+                <td class="quantity"><input type="text" size="1" value='{!! $item["qty"] !!}' name="quantity[40]" class="span1">
+                 </td>
+                 <td class="total">
+                 <a href="#"><img class="tooltip-test" data-original-title="Update" src="{{ asset('public/user/img/update.png') }}" alt=""></a>
+                  <a href="{!! url('xoa-san-pham',['id'=>$item['rowid']]) !!}"><img class="tooltip-test" data-original-title="Remove" src="{{ asset('public/user/img/remove.png') }}" alt=""></a></td>
+                <td class="price">{!! number_format($item['price'],0,',','.') !!}</td>
+                <td class="total">{!! number_format($item['price']*$item["qty"],0,',','.')  !!}</td>
+            </tr>
+            @endforeach
+-------------------------------
+Lỗi timezone
+
+chỉnh 'timezone' => 'Asia/Ho_Chi_Minh' trong config/app.php
+
+
+
+
+
+
